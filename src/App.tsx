@@ -1,7 +1,7 @@
 import "./index.css";
 import ppImage from "./assets/imgs/pp.jpg";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 import fightSprite from "./assets/sprites/fight.png";
 import fightSelectedSprite from "./assets/sprites/fight_selected.png";
