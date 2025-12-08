@@ -15,8 +15,86 @@ import itemSelectedSprite from "./assets/sprites/item_selected.png";
 import mercySprite from "./assets/sprites/mercy.png";
 import mercySelectedSprite from "./assets/sprites/mercy_selected.png";
 
+type Mode = "NONE" | "ACT" | "ITEM";
+
+type Action = {
+  id: number;
+  name: string;
+  src: string;
+  selectedSrc: string;
+};
+
+type Item = {
+  id: number;
+  title: string;
+  output: string;
+};
+
+const ACT_ITEMS: Item[] = [
+  {
+    id: 0,
+    title: "Check",
+    output: "Just a nerd.",
+  },
+  {
+    id: 1,
+    title: "Call",
+    output: "ring... ring... \n no one picked up.",
+  },
+];
+
+const ITEMS_ITEMS: Item[] = [
+  {
+    id: 0,
+    title: "Hobbies",
+    output: "I like...",
+  },
+  {
+    id: 1,
+    title: "Resources",
+    output: "Here are some cool stuff",
+  },
+  {
+    id: 2,
+    title: "Projects",
+    output: "It's bold of you to assume i finished any projects.",
+  },
+];
+
+const ACTIONS: Action[] = [
+  {
+    id: 0,
+    name: "FIGHT",
+    src: fightSprite,
+    selectedSrc: fightSelectedSprite,
+  },
+  {
+    id: 1,
+    name: "ACT",
+    src: actSprite,
+    selectedSrc: actSelectedSprite,
+  },
+  {
+    id: 2,
+    name: "ITEM",
+    src: itemSprite,
+    selectedSrc: itemSelectedSprite,
+  },
+  {
+    id: 3,
+    name: "MERCY",
+    src: mercySprite,
+    selectedSrc: mercySelectedSprite,
+  },
+];
+
 function App() {
   const [isLoading, setIsLoading] = useState(true);
+
+  const [mode, setMode] = useState<Mode>("NONE");
+  const [text, setText] = useState<string>("* A weird creature appears...");
+  const [focusedAction, setFocusedAction] = useState<number>(0); // 0..ACTIONS.length-1
+  const [submenuIndex, setSubmenuIndex] = useState<number>(0); // index inside ACT/ITEM
 
   useEffect(() => {
     const imagesToLoad = [
@@ -45,6 +123,55 @@ function App() {
       setTimeout(() => setIsLoading(false), 500);
     });
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (mode === "NONE") {
+        if (e.key === "ArrowRight")
+          setFocusedAction((p) => (p + 1) % ACTIONS.length);
+        else if (e.key === "ArrowLeft")
+          setFocusedAction((p) => (p - 1 + ACTIONS.length) % ACTIONS.length);
+        else if (e.key.toLowerCase() === "z" || e.key === "Enter") {
+          if (focusedAction === 1) {
+            // ACT
+            setMode("ACT");
+            setSubmenuIndex(0);
+            setText("* What will you do?");
+          } else if (focusedAction === 2) {
+            // ITEM
+            setMode("ITEM");
+            setSubmenuIndex(0);
+            setText("* Choose an item.");
+          } else {
+            // FIGHT/MERCY are not implemented
+            setText("* You hesitate.");
+          }
+        }
+      } else {
+        // In submenu
+        const items = mode === "ACT" ? ACT_ITEMS : ITEMS_ITEMS;
+        if (e.key === "ArrowUp")
+          setSubmenuIndex((p) => (p - 1 + items.length) % items.length);
+        else if (e.key === "ArrowDown")
+          setSubmenuIndex((p) => (p + 1) % items.length);
+        else if (e.key.toLowerCase() === "z" || e.key === "Enter") {
+          const chosen = items[submenuIndex];
+          setText(`* ${chosen.output}`);
+          setMode("NONE");
+          // Optional: stay in submenu to allow multiple actions, or pop back:
+          // setMode("NONE");
+        } else if (e.key.toLowerCase() === "x" || e.key === "Escape") {
+          setMode("NONE");
+          setText("* A weird creature appears...");
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+          // Ignore left/right in submenu
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mode, focusedAction, submenuIndex]);
 
   if (isLoading) {
     return (
@@ -76,7 +203,16 @@ function App() {
 
               <div className="h-1/2 flex flex-col">
                 <div className="h-[70%] md:h-[60%] p-4 border-white border-5 md:border-10 overflow-y-auto">
-                  <MainBlock />
+                  {/* Text area */}
+                  {mode === "NONE" ? <MainBlock text={text} /> : null}
+                  {/* Submenu list when mode is ACT or ITEM */}
+                  {mode !== "NONE" && (
+                    <Submenu
+                      mode={mode}
+                      index={submenuIndex}
+                      onSelect={(i) => setSubmenuIndex(i)}
+                    />
+                  )}
                 </div>
 
                 <div className="h-[15%] md:h-[15%] flex items-center space-x-2 md:space-x-6">
@@ -92,7 +228,24 @@ function App() {
                 </div>
 
                 <div className="h-[10%] md:h-[25%] flex space-x-2">
-                  <ActionButtons />
+                  <ActionButtons
+                    focusedAction={focusedAction}
+                    setFocusedAction={setFocusedAction}
+                    onConfirm={() => {
+                      if (focusedAction === 1) {
+                        setMode("ACT");
+                        setSubmenuIndex(0);
+                        setText("* What will you do?");
+                      } else if (focusedAction === 2) {
+                        setMode("ITEM");
+                        setSubmenuIndex(0);
+                        setText("* Choose an item.");
+                      } else {
+                        setText("* You hesitate.");
+                      }
+                    }}
+                    disabled={mode !== "NONE"}
+                  />
                 </div>
               </div>
             </div>
@@ -103,85 +256,76 @@ function App() {
   }
 }
 
-function MainBlock() {
-  return <p className="text-[14px] md:text-[28px]">* Hello World!</p>;
+function MainBlock({ text }: { text: string }) {
+  return (
+    <p
+      style={{ wordSpacing: "10px" }}
+      className="text-[14px] md:text-[28px] whitespace-pre-wrap"
+    >
+      {text}
+    </p>
+  );
 }
 
-function ActionButtons() {
-  const [action_id, setActionId] = useState(0);
-  /* 
-    useRef is a React hook that gives you a mutable container,
-    whose ".current" value persists across renders. 
-  */
-  const currentIdRef = useRef(action_id);
-  currentIdRef.current = action_id;
+function Submenu({
+  mode,
+  index,
+  onSelect,
+}: {
+  mode: Mode;
+  index: number;
+  onSelect: (i: number) => void;
+}) {
+  const items = mode === "ACT" ? ACT_ITEMS : ITEMS_ITEMS;
+  return (
+    <div className="mt-4 grid grid-cols-1 gap-1">
+      {items.map((it, i) => {
+        const selected = i === index;
+        return (
+          <button
+            key={`${mode}-${it.id}`}
+            className={`text-left mars text-[14px] md:text-[24px] px-2 py-1 ${
+              selected ? "text-myellow" : "text-white"
+            }`}
+            onClick={() => onSelect(i)}
+          >
+            * {it.title}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
-  const actions = [
-    {
-      id: 0,
-      name: "FIGHT",
-      src: fightSprite,
-      selectedSrc: fightSelectedSprite,
-    },
-    {
-      id: 1,
-      name: "ACT",
-      src: actSprite,
-      selectedSrc: actSelectedSprite,
-    },
-    {
-      id: 2,
-      name: "ITEM",
-      src: itemSprite,
-      selectedSrc: itemSelectedSprite,
-    },
-    {
-      id: 3,
-      name: "MERCY",
-      src: mercySprite,
-      selectedSrc: mercySelectedSprite,
-    },
-  ];
-
-  // This effect listens for keyboard presses
-  useEffect(() => {
-    const handleKeyDown = (e: any) => {
-      if (e.key === "ArrowRight") {
-        // getting the mod of actions.len gives us our range
-        setActionId((prev) => (prev + 1) % actions.length);
-      } else if (e.key === "ArrowLeft") {
-        // Adding actions.length ensures we don't get a negative number
-        setActionId((prev) => (prev - 1 + actions.length) % actions.length);
-      } else if (e.key === "z") {
-        console.log(currentIdRef.current);
-      }
-    };
-
-    // Attach the event listener
-    window.addEventListener("keydown", handleKeyDown);
-    // CLEANUP: Remove the listener when component unmounts
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []); // [] means run once
-
+// Update ActionButtons to allow external focus control and disabled state
+function ActionButtons({
+  focusedAction,
+  setFocusedAction,
+  onConfirm,
+  disabled,
+}: {
+  focusedAction: number;
+  setFocusedAction: (id: number) => void;
+  onConfirm: () => void;
+  disabled?: boolean;
+}) {
   return (
     <>
-      {actions.map((action) => {
-        const isSelected = action_id === action.id;
-
+      {ACTIONS.map((action) => {
+        const isSelected = focusedAction === action.id;
         return (
           <button
             key={action.name}
             className="w-full"
-            onClick={() => setActionId(action.id)}
+            onClick={() => setFocusedAction(action.id)}
+            disabled={disabled}
           >
             <img
-              // Ternary operator: if selected, show selectedSrc, else normal src
               src={isSelected ? action.selectedSrc : action.src}
               alt={action.name}
-              className="w-full h-auto"
+              className={`w-full h-auto ${disabled ? "opacity-60" : ""}`}
               style={{ imageRendering: "pixelated" }}
+              onDoubleClick={onConfirm}
             />
           </button>
         );
