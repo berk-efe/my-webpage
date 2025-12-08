@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "mars";
+  src: url(assets/font/Mars_Needs_Cunnilingus/Mars_Needs_Cunnilingus.ttf);
+}
+
+@font-face {
+  font-family: "dtm-mono";
+  src: url(assets/font/determination-mono.otf/determination-mono.otf);
+}
+
+@font-face {
+  font-family: "dtm-sans";
+  src: url(assets/font/DTM-Sans.otf);
+}
+
+@font-face {
+  font-family: "mercy";
+  src: url(assets/font/mercy-font/MERCY.ttf);
+}
+
+@theme {
+  --color-myellow: #fff700; /* yellow */
+  --color-mpurple: #602e61; /* purple */
+  --color-mgreen: #53ff50; /* green */
+  --color-morange: #fc7c22; /* orange */
+  --color-mgray: #7f8082; /* gray */
+}
+
+body {
+  font-family: "dtm-sans";
+  background-color: black;
+  color: white;
+}
+
+.font-mars {
+  font-family: "mars";
+}
+
+.font-mercy {
+  font-family: "mercy";
+  padding: 0;
+  margin: 0;
+}
