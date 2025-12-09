@@ -314,16 +314,30 @@ function ActionButtons({
         return (
           <button
             key={action.name}
-            className="w-full"
-            onClick={() => setFocusedAction(action.id)}
+            // "w-full" ensures they split space evenly in your flex container
+            className="w-full h-full flex items-center justify-center relative"
             disabled={disabled}
+            onClick={(e) => {
+              e.preventDefault(); // Prevents ghost clicks on mobile
+              if (disabled) return;
+
+              // --- SMART TOUCH LOGIC ---
+              if (isSelected) {
+                // If already selected, this is the 2nd tap -> Confirm
+                onConfirm();
+              } else {
+                // If not selected, this is the 1st tap -> Select
+                setFocusedAction(action.id);
+              }
+            }}
           >
             <img
               src={isSelected ? action.selectedSrc : action.src}
               alt={action.name}
-              className={`w-full h-auto ${disabled ? "opacity-60" : ""}`}
+              className={`w-full h-auto object-contain ${
+                disabled ? "opacity-60" : ""
+              }`}
               style={{ imageRendering: "pixelated" }}
-              onDoubleClick={onConfirm}
             />
           </button>
         );
