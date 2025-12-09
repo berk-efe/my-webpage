@@ -142,8 +142,10 @@ function App() {
             setMode("ITEM");
             setSubmenuIndex(0);
             setText("* Choose an item.");
+          } else if (focusedAction === 0) {
+            window.close();
           } else {
-            // FIGHT/MERCY are not implemented
+            // MERCY isnt implemented
             setText("* You hesitate.");
           }
         }
@@ -158,13 +160,12 @@ function App() {
           const chosen = items[submenuIndex];
           setText(`* ${chosen.output}`);
           setMode("NONE");
-          // Optional: stay in submenu to allow multiple actions, or pop back:
-          // setMode("NONE");
         } else if (e.key.toLowerCase() === "x" || e.key === "Escape") {
           setMode("NONE");
           setText("* A weird creature appears...");
         } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
           // Ignore left/right in submenu
+          // FOR NOW HEH
         }
       }
     };
@@ -203,9 +204,7 @@ function App() {
 
               <div className="h-1/2 flex flex-col">
                 <div className="h-[70%] md:h-[60%] p-4 border-white border-5 md:border-10 overflow-y-auto">
-                  {/* Text area */}
                   {mode === "NONE" ? <MainBlock text={text} /> : null}
-                  {/* Submenu list when mode is ACT or ITEM */}
                   {mode !== "NONE" && (
                     <Submenu
                       mode={mode}
@@ -297,7 +296,6 @@ function Submenu({
   );
 }
 
-// Update ActionButtons to allow external focus control and disabled state
 function ActionButtons({
   focusedAction,
   setFocusedAction,
